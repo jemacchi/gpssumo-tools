@@ -100,7 +100,8 @@ var _busLines = {
     }
 };
 
-var _intervalBetweenBuses = 10*60*1000;  // 10 min
+var _intervalBetweenBusesMin = 12;
+var _intervalBetweenBuses = _intervalBetweenBusesMin*60*1000;  
 var _intervalCheck = 5000;
 var _maxLogsByProx = 5;
 
@@ -171,7 +172,7 @@ function lineCheck(line) {
 }
 
 var tprox= [];
-tprox['test-1'] = [ { time: 1512169401035, line: '500', bus: '13', beacon: 'test-1', dist: 14 },
+tprox['test-1'] = [ { time: 1512069401035, line: '500', bus: '13', beacon: 'test-1', dist: 14 },
   { time: 1512069250837, line: '500', bus: '9', beacon: 'test-1',  dist: 99 },
   { time: 1512068840522, line: '500', bus: '12',beacon: 'test-1',  dist: 15 },
   { time: 1512068690417, line: '500', bus: '8', beacon: 'test-1',  dist: 21 },
@@ -189,19 +190,25 @@ systemState.proximityLog['500'] = tprox ;
 
 function checkTiming() {
     var pLog = systemState.proximityLog ;
-    var cline = 0;
-    while (cline < pLog.length) {
-        byBeaconLog = pLog[cline];
-        var cbeacon = 0;
-        while (cbeacon < byBeaconLog.length) {
-            if (cbeacon+1 < 5) {
-                if ( ((byBeaconLog[cbeacon].time - byBeaconLog[cbeacon+1].time)/1000) > _intervalBetweenBuses ){
-                    console.log('Timing Alert !!! - Delayed: ' + byBeaconLog[0]);
-                }
+    for (cLineKey in pLog) {
+        //console.log('--------- '+cLineKey+' ---------');
+        byBeaconLog = pLog[cLineKey];
+        for (cbeacon in byBeaconLog) {
+            //console.log('--------- '+cbeacon+' ---------');
+            proximities = byBeaconLog[cbeacon];
+            var cprox = 0;
+            while (cprox < proximities.length) {
+                if (cprox+1 < proximities.length) {
+                    var freq = proximities[cprox].time - proximities[cprox+1].time ;
+                    console.log('Freq: '+ freq/1000/60 + ' min');
+                    if ( freq > _intervalBetweenBuses ){
+                        console.log('Timing Alert !!! - Delayed: ');
+                        console.log(proximities[cprox]);
+                    }
+                } 
+                cprox++;
             }
-            ++cbeacon;
-        } 
-        ++cline;
+        };
     };
 }
 
@@ -214,10 +221,11 @@ function saveStatus() {
     });
 }
 
-setInterval(function () { lineCheck('500') }, _intervalCheck);
+/*setInterval(function () { lineCheck('500') }, _intervalCheck);
 setInterval(function() { lineCheck('501') },_intervalCheck);
 setInterval(function() { lineCheck('502') },_intervalCheck);
 setInterval(function() { lineCheck('503') },_intervalCheck);
 setInterval(function() { lineCheck('504') },_intervalCheck);
-setInterval(function() { lineCheck('505') },_intervalCheck);
-setInterval(checkTiming,_intervalCheck*3);
+setInterval(function() { lineCheck('505') },_intervalCheck);*/
+//setInterval(checkTiming,_intervalCheck);
+checkTiming();
