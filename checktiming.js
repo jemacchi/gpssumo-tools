@@ -18,9 +18,26 @@ var _busLines = {
             }
         },
         beaconList: [
-            { id: 'test-1', pos: { latitude: -37.321744950784435, longitude: -59.132108688354485 }, radius: 100 },
-            { id: 'test-2', pos: { latitude: -37.31063541829835, longitude: -59.137430191040046 }, radius: 100 },
-            { id: 'test-3', pos: { latitude: -37.29725401710591, longitude: -59.13719415664673 }, radius: 100 },
+            { id: 'y-1', pos: { latitude: -37.290099, longitude: -59.155830 }, radius: 50 },
+            { id: 'y-2', pos: { latitude: -37.292506, longitude: -59.156345 }, radius: 50 },
+            { id: 'y-3', pos: { latitude: -37.298156, longitude: -59.138428 }, radius: 50 },
+            { id: 'y-4', pos: { latitude: -37.301877, longitude: -59.142934 }, radius: 50 },
+            { id: 'y-5', pos: { latitude: -37.304540, longitude: -59.139372 }, radius: 50 },
+            { id: 'y-6', pos: { latitude: -37.303772, longitude: -59.142827 }, radius: 50 },
+            { id: 'y-7', pos: { latitude: -37.309711, longitude: -59.135209 }, radius: 50 },
+            { id: 'y-8', pos: { latitude: -37.308260, longitude: -59.139415 }, radius: 50 },
+            { id: 'y-9', pos: { latitude: -37.323363, longitude: -59.136583 }, radius: 50 },
+            { id: 'y-10', pos: { latitude: -37.323449, longitude: -59.133085 }, radius: 50 },
+            { id: 'y-11', pos: { latitude: -37.327459, longitude: -59.136068 }, radius: 50 },
+            { id: 'y-12', pos: { latitude: -37.328022, longitude: -59.137462 }, radius: 50 },
+            { id: 'y-13', pos: { latitude: -37.334607, longitude: -59.134952 }, radius: 50 },
+            { id: 'y-14', pos: { latitude: -37.333106, longitude: -59.130918 }, radius: 50 },
+            { id: 'y-15', pos: { latitude: -37.338446, longitude: -59.126004 }, radius: 50 },
+            { id: 'y-16', pos: { latitude: -37.334915, longitude: -59.124266 }, radius: 50 },
+            { id: 'y-17', pos: { latitude: -37.332748, longitude: -59.114760 }, radius: 50 },
+            { id: 'y-18', pos: { latitude: -37.332134, longitude: -59.116906 }, radius: 50 },
+            { id: 'y-19', pos: { latitude: -37.330462, longitude: -59.112421 }, radius: 50 },
+            { id: 'y-20', pos: { latitude: -37.329830, longitude: -59.114653 }, radius: 50 },
         ]
     },
     '501': {
@@ -100,7 +117,7 @@ var _busLines = {
     }
 };
 
-var _intervalBetweenBusesMin = 12;
+var _intervalBetweenBusesMin = 12;  // 12 min for testing purposes
 var _intervalBetweenBuses = _intervalBetweenBusesMin*60*1000;  
 var _intervalCheck = 5000;
 var _maxLogsByProx = 5;
@@ -171,43 +188,26 @@ function lineCheck(line) {
     request.post(_busLines[line].req, callback);
 }
 
-var tprox= [];
-tprox['test-1'] = [ { time: 1512069401035, line: '500', bus: '13', beacon: 'test-1', dist: 14 },
-  { time: 1512069250837, line: '500', bus: '9', beacon: 'test-1',  dist: 99 },
-  { time: 1512068840522, line: '500', bus: '12',beacon: 'test-1',  dist: 15 },
-  { time: 1512068690417, line: '500', bus: '8', beacon: 'test-1',  dist: 21 },
-  { time: 1512068315108, line: '500', bus: '11',beacon: 'test-1',  dist: 89 } ];
-tprox['test-3'] = [ { time: 1512069405946, line: '500', bus: '8', beacon: 'test-3', dist: 9 },
-  { time: 1512068680420, line: '500', bus: '6', beacon: 'test-3', dist: 35 },
-  { time: 1512068220032, line: '500', bus: '4', beacon: 'test-3', dist: 92 } ];
-tprox['test-2'] = [ { time: 1512069516049, line: '500', bus: '2', beacon: 'test-2', dist: 67 },
-  { time: 1512069075708, line: '500', bus: '8', beacon: 'test-2', dist: 70 },
-  { time: 1512068875545, line: '500', bus: '13',beacon: 'test-2', dist: 67 },
-  { time: 1512068340121, line: '500', bus: '12',beacon: 'test-2', dist: 56 },
-  { time: 1512068335140, line: '500', bus: '6', beacon: 'test-2', dist: 48 } ] ;
-
-systemState.proximityLog['500'] = tprox ;
-
 function checkTiming() {
     var pLog = systemState.proximityLog ;
     for (cLineKey in pLog) {
-        //console.log('--------- '+cLineKey+' ---------');
+        console.log('--------- '+cLineKey+' ---------');
         byBeaconLog = pLog[cLineKey];
         for (cbeacon in byBeaconLog) {
-            //console.log('--------- '+cbeacon+' ---------');
+            console.log('--------- '+cbeacon+' ---------');
             proximities = byBeaconLog[cbeacon];
             var cprox = 0;
-            while (cprox < proximities.length) {
+            //while (cprox < proximities.length) {
                 if (cprox+1 < proximities.length) {
                     var freq = proximities[cprox].time - proximities[cprox+1].time ;
-                    console.log('Freq: '+ freq/1000/60 + ' min');
+                    console.log('Last Freq: '+ freq/1000/60 + ' min');
                     if ( freq > _intervalBetweenBuses ){
-                        console.log('Timing Alert !!! - Delayed: ');
-                        console.log(proximities[cprox]);
+                        console.log('Timing Alert !!! - Frequency between last 2 buses ('+freq/1000/60+' min) : ');
+                        console.log('Between BusID: '+proximities[cprox].bus+' and BusID: '+proximities[cprox+1].bus+' in Beacon '+cbeacon);
                     }
                 } 
-                cprox++;
-            }
+            //    cprox++;
+            //}
         };
     };
 }
@@ -221,11 +221,10 @@ function saveStatus() {
     });
 }
 
-/*setInterval(function () { lineCheck('500') }, _intervalCheck);
-setInterval(function() { lineCheck('501') },_intervalCheck);
+setInterval(function () { lineCheck('500') }, _intervalCheck);
+/*setInterval(function() { lineCheck('501') },_intervalCheck);
 setInterval(function() { lineCheck('502') },_intervalCheck);
 setInterval(function() { lineCheck('503') },_intervalCheck);
 setInterval(function() { lineCheck('504') },_intervalCheck);
 setInterval(function() { lineCheck('505') },_intervalCheck);*/
-//setInterval(checkTiming,_intervalCheck);
-checkTiming();
+setInterval(checkTiming,_intervalCheck*3);
