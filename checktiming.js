@@ -117,7 +117,7 @@ var _busLines = {
     }
 };
 
-var _intervalBetweenBusesMin = 12;  // 12 min for testing purposes
+var _intervalBetweenBusesMin = 12;  // 12 min 
 var _intervalBetweenBuses = _intervalBetweenBusesMin*60*1000;  
 var _intervalCheck = 5000;
 var _maxLogsByProx = 5;
@@ -188,22 +188,28 @@ function lineCheck(line) {
     request.post(_busLines[line].req, callback);
 }
 
+var alertLog = {};
+
 function checkTiming() {
     var pLog = systemState.proximityLog ;
     for (cLineKey in pLog) {
-        console.log('--------- '+cLineKey+' ---------');
+        //console.log('--------- '+cLineKey+' ---------');
         byBeaconLog = pLog[cLineKey];
         for (cbeacon in byBeaconLog) {
-            console.log('--------- '+cbeacon+' ---------');
+            //console.log('--------- '+cbeacon+' ---------');
             proximities = byBeaconLog[cbeacon];
             var cprox = 0;
             //while (cprox < proximities.length) {
                 if (cprox+1 < proximities.length) {
                     var freq = proximities[cprox].time - proximities[cprox+1].time ;
-                    console.log('Last Freq: '+ freq/1000/60 + ' min');
+                    var fKey = cLineKey+'-'+proximities[cprox].time+'-'+proximities[cprox+1].time ;
+                    //console.log('Last Freq: '+ freq/1000/60 + ' min');
                     if ( freq > _intervalBetweenBuses ){
-                        console.log('Timing Alert !!! - Frequency between last 2 buses ('+freq/1000/60+' min) : ');
-                        console.log('Between BusID: '+proximities[cprox].bus+' and BusID: '+proximities[cprox+1].bus+' in Beacon '+cbeacon);
+                        var log = '--------------------------------------------------- \n'+
+                                   'Timing Alert !!! - Frequency between last 2 buses ('+freq/1000/60+' min) \n'+
+                                   'At line: '+cLineKey+' between BusID: '+proximities[cprox].bus+' and BusID: '+proximities[cprox+1].bus+' in Beacon '+cbeacon+'\n';
+                        console.log(log);
+                        alertLog[fKey] = {log};
                     }
                 } 
             //    cprox++;
@@ -212,13 +218,19 @@ function checkTiming() {
     };
 }
 
-function saveStatus() {
+var lastDate = (new Date()).toISOString().substring(0, 10);
+
+function saveAlerts() {
     var today = (new Date()).toISOString().substring(0, 10);
-    fs.writeFile('./results/checktiming-' + today + '.log', JSON.stringify(systemState.proximityLog), function (err) {
+    fs.writeFile('./results/checktiming-alerts-' + today + '.log', JSON.stringify(alertLog), function (err) {
         if (err) {
             return console.log(err);
         }
     });
+    if (lastDate != today) {
+        alertLog = {};
+    };
+    lastDate = today;
 }
 
 setInterval(function () { lineCheck('500') }, _intervalCheck);
@@ -227,4 +239,6 @@ setInterval(function() { lineCheck('502') },_intervalCheck);
 setInterval(function() { lineCheck('503') },_intervalCheck);
 setInterval(function() { lineCheck('504') },_intervalCheck);
 setInterval(function() { lineCheck('505') },_intervalCheck);*/
-setInterval(checkTiming,_intervalCheck*3);
+setInterval(checkTiming,_intervalCheck*3);  // 15 secs
+setInterval(saveAlerts,_intervalCheck);  // 1 min
+
