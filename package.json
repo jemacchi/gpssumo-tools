@@ -1,0 +1,26 @@
+{
+  "name": "gpssumo-tools",
+  "version": "1.0.0",
+  "description": "GPSSumo tools",
+  "main": "checktiming.js",
+  "dependencies": {
+    "geolib": "^2.0.24",
+    "leaflet-headless": "^0.2.6",
+    "min-server": "^1.0.0",
+    "request": "^2.83.0"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jemacchi/gpssumo-tools.git"
+  },
+  "author": "Jose Macchi",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/jemacchi/gpssumo-tools/issues"
+  },
+  "homepage": "https://github.com/jemacchi/gpssumo-tools#readme"
+}

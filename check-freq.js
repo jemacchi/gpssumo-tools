@@ -205,9 +205,10 @@ function checkTiming() {
                     var fKey = cLineKey+'-'+proximities[cprox].time+'-'+proximities[cprox+1].time ;
                     //console.log('Last Freq: '+ freq/1000/60 + ' min');
                     if ( freq > _intervalBetweenBuses ){
-                        var log = '--------------------------------------------------- \n'+
-                                   'Timing Alert !!! - Frequency between last 2 buses ('+freq/1000/60+' min) \n'+
-                                   'At line: '+cLineKey+' between BusID: '+proximities[cprox].bus+' and BusID: '+proximities[cprox+1].bus+' in Beacon '+cbeacon+'\n';
+                        //var log = '--------------------------------------------------- \n'+
+                        //           'Timing Alert !!! - Frequency between last 2 buses ('+freq/1000/60+' min) \n'+
+                        //           'At line: '+cLineKey+' between BusID: '+proximities[cprox].bus+' and BusID: '+proximities[cprox+1].bus+' in Beacon '+cbeacon+'\n';
+                        var log = cLineKey+','+cbeacon+','+(freq/1000/60)+','+proximities[cprox].bus+','+proximities[cprox+1].bus+','+proximities[cprox].time+','+proximities[cprox+1].time;
                         console.log(log);
                         alertLog[fKey] = {log};
                     }
@@ -240,5 +241,5 @@ setInterval(function() { lineCheck('503') },_intervalCheck);
 setInterval(function() { lineCheck('504') },_intervalCheck);
 setInterval(function() { lineCheck('505') },_intervalCheck);*/
 setInterval(checkTiming,_intervalCheck*3);  // 15 secs
-setInterval(saveAlerts,_intervalCheck);  // 1 min
+setInterval(saveAlerts,_intervalCheck*12);  // 1 min
 
