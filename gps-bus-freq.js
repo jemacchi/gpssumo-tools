@@ -96,7 +96,8 @@ var _busLines = {
     }
 };
   
-var _intervalCheck = 5000;
+var _intervalCheck = 1000;
+var _avgCounterLimit = 100;
 
 var systemState = {
     frequencies: {},
@@ -114,21 +115,35 @@ function gpsFreqCheck(line) {
                 var aBusId = arrBuses[1][counter].options.title.substring(1, arrBuses[1][counter].options.title.indexOf(']'));
                 var newBusPos = { time: when, latitude: arrBuses[1][counter]._latlng.lat, longitude: arrBuses[1][counter]._latlng.lng };
                 var lastBusPos = newBusPos;
-                if (!frequencies.aBusId) {
-                    frequencies.aBusId = {};
+
+                if (frequencies[aBusId] == null) {
+                    frequencies[aBusId] = {};
+                    frequencies[aBusId].id = aBusId;
+                    frequencies[aBusId].newPosition = newBusPos;
+                    frequencies[aBusId].lastPosition = lastBusPos;
+                    frequencies[aBusId].stats = { avgcounter: 0 };
                 }
-                if (frequencies.aBusId.lastPosition) {
-                    lastBusPos = frequencies.aBusId.lastPosition;        
+                if (typeof frequencies[aBusId].newPosition != 'undefined') {
+                    lastBusPos = frequencies[aBusId].newPosition;
                 }
-                frequencies.aBusId.newPosition = newBusPos;
-                frequencies.aBusId.lastPosition = lastBusPos;
-                if (aBusId == '1') {
-                    console.log(frequencies.aBusId);
-                }
-                if (newBusPos.latitude != lastBusPos.latitude || newBusPos.longitude != lastBusPos.longitude) {
-                    console.log('BusID '+aBusId+' has changed position in '+((newBusPos.time-lastBusPos.time)/1000/60)+ ' minutes');
+                var secs = ((newBusPos.time-lastBusPos.time)/1000);
+                if ( secs > 0 && (newBusPos.latitude != lastBusPos.latitude || newBusPos.longitude != lastBusPos.longitude)) {
+        
+                    var avgc = frequencies[aBusId].stats.avgcounter ;
+                    if (avgc < _avgCounterLimit) {
+                        secs = ((secs*avgc)+secs)/(avgc+1);
+                        avgc = avgc + 1;
+                    } else {
+                        secs = ((newBusPos.time-lastBusPos.time)/1000);                        
+                        avgc = 0;
+                    }
+                    console.log('BusID '+aBusId+' updated position in last '+secs+ ' seconds');
+                    frequencies[aBusId].newPosition = newBusPos;
+                    frequencies[aBusId].lastPosition = lastBusPos; 
+                    frequencies[aBusId].stats = { update: secs , avgcounter: avgc };  
                 }
                 //console.log(frequencies[aBusId]);
+                counter++;
             }
             systemState.frequencies[line] = frequencies;
         }
@@ -157,5 +172,5 @@ setInterval(function() { gpsFreqCheck('502') },_intervalCheck);
 setInterval(function() { gpsFreqCheck('503') },_intervalCheck);
 setInterval(function() { gpsFreqCheck('504') },_intervalCheck);
 setInterval(function() { gpsFreqCheck('505') },_intervalCheck);*/
-//setInterval(saveGPSFrequencies,_intervalCheck*12);  // 1 min
+setInterval(saveGPSFrequencies,_intervalCheck*10);  // 10 secs
 
