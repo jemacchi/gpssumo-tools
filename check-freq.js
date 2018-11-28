@@ -1,21 +1,18 @@
-var request = require('request');
 var L = require('leaflet-headless');
 var geolib = require('geolib');
 var fs = require('fs');
+var nd = require('needle');
 
+// Informacion vinculada a lineas de colectivos a revisar, junto con paradas de cada linea
 var _busLines = {
     '500': {
         req: {
             url: 'http://www.gpssumo.com/ajax/ebus_dev/get/faa8f91f9b9fbc077ac44ca18aaa7b97/0',
             headers: {
                 'X-Requested-With': 'XMLHttpRequest',
-                'Origin': 'http://www.gpssumo.com/',
                 'Referer': 'http://www.gpssumo.com/'
             },
-            form: {
-                t: '0',
-                r: '3_500'
-            }
+            body: "t=0&r=3_500"
         },
         beaconList: [
             { id: 'y-1', pos: { latitude: -37.290099, longitude: -59.155830 }, radius: 50 },
@@ -45,13 +42,9 @@ var _busLines = {
             url: 'http://www.gpssumo.com/ajax/ebus_dev/get/faa8f91f9b9fbc077ac44ca18aaa7b97/0',
             headers: {
                 'X-Requested-With': 'XMLHttpRequest',
-                'Origin': 'http://www.gpssumo.com/',
                 'Referer': 'http://www.gpssumo.com/'
             },
-            form: {
-                t: '0',
-                r: '4_501'
-            }
+            body: "t=0&r=4_501"
         },
         beaconList: []
     },
@@ -60,13 +53,9 @@ var _busLines = {
             url: 'http://www.gpssumo.com/ajax/ebus_dev/get/faa8f91f9b9fbc077ac44ca18aaa7b97/0',
             headers: {
                 'X-Requested-With': 'XMLHttpRequest',
-                'Origin': 'http://www.gpssumo.com/',
                 'Referer': 'http://www.gpssumo.com/'
             },
-            form: {
-                t: '0',
-                r: '5_502'
-            }
+            body: "t=0&r=5_502"
         },
         beaconList: []
     },
@@ -75,13 +64,9 @@ var _busLines = {
             url: 'http://www.gpssumo.com/ajax/ebus_dev/get/faa8f91f9b9fbc077ac44ca18aaa7b97/0',
             headers: {
                 'X-Requested-With': 'XMLHttpRequest',
-                'Origin': 'http://www.gpssumo.com/',
                 'Referer': 'http://www.gpssumo.com/'
             },
-            form: {
-                t: '0',
-                r: '6_503'
-            }
+            body: "t=0&r=6_503"
         },
         beaconList: []
     },
@@ -90,13 +75,9 @@ var _busLines = {
             url: 'http://www.gpssumo.com/ajax/ebus_dev/get/faa8f91f9b9fbc077ac44ca18aaa7b97/0',
             headers: {
                 'X-Requested-With': 'XMLHttpRequest',
-                'Origin': 'http://www.gpssumo.com/',
                 'Referer': 'http://www.gpssumo.com/'
             },
-            form: {
-                t: '0',
-                r: '7_504'
-            }
+            body: "t=0&r=7_504"
         },
         beaconList: []
     },
@@ -105,20 +86,19 @@ var _busLines = {
             url: 'http://www.gpssumo.com/ajax/ebus_dev/get/faa8f91f9b9fbc077ac44ca18aaa7b97/0',
             headers: {
                 'X-Requested-With': 'XMLHttpRequest',
-                'Origin': 'http://www.gpssumo.com/',
                 'Referer': 'http://www.gpssumo.com/'
             },
-            form: {
-                t: '0',
-                r: '8_505'
-            }
+            body: "t=0&r=8_505"
         },
         beaconList: []
     }
 };
 
+// Valor de intervalo/frecuencia minima entre colectivos en minutos (por encima de eso, es alerta)
 var _intervalBetweenBusesMin = 12;  // 12 min 
+// Idem _intervalBetweenBusesMin pero en milisegundos
 var _intervalBetweenBuses = _intervalBetweenBusesMin*60*1000;  
+// Chequeo estado de red de colectivos cada 5 segundos
 var _intervalCheck = 5000;
 var _maxLogsByProx = 5;
 
@@ -127,11 +107,18 @@ var systemState = {
     proximityLog: {},
 };
 
+var sysDebug = true; 
+function debug(msg) {
+    if (sysDebug) {
+        console.log(msg);
+    }
+}
+
 function lineCheck(line) {
     var arrBuses;
-    function callback(error, response, body) {
+    function callback(error, response) {
         if (!error && response.statusCode == 200) {
-            arrBuses = eval(body);
+            arrBuses = eval(response.body.substring(3));
             var distances = [];
             var proximityLog = (systemState.proximityLog[line])?systemState.proximityLog[line]:[];
             var when = Date.now();
@@ -153,7 +140,7 @@ function lineCheck(line) {
                     );
                     var beaconId = _busLines[line].beaconList[bcounter].id;
                     if (isInsideBeacon) {
-                        //console.log('Bus ' + aBusId +' ('+line+') in proximity of beacon ' + beaconId);
+                        debug('Bus ' + aBusId +' ('+line+') in proximity of beacon ' + beaconId);
                         // Save  { time, busLine, busId, beaconId, distanceToBeacon } to proximityLog
                         if (proximityLog[beaconId] == null) {
                             proximityLog[beaconId] = [];
@@ -161,19 +148,19 @@ function lineCheck(line) {
                         if (proximityLog[beaconId].length > 0) {
                             // Check if it's same Bus as last recorded Bus
                             if (proximityLog[beaconId][0].bus != aBusId.toString()) {
-                                    //console.log('Inserting new proximities (it is a different bus)');
+                                    debug('Inserting new proximities (it is a different bus)');
                                     if (proximityLog[beaconId].length == _maxLogsByProx) {
                                         proximityLog[beaconId].pop();
                                     }
                                     proximityLog[beaconId].unshift({ time: when, line: line, bus: aBusId, beacon: beaconId, dist: d });   
                             }
                         } else {
-                            //console.log('Inserting the first proximity');
+                            debug('Inserting the first proximity');
                             // It's the first one
                             proximityLog[beaconId].push({ time: when, line: line, bus: aBusId, beacon: beaconId, dist: d });
                         }
-                        //console.log(proximityLog);
-                        //console.log('------------------------------------');
+                        debug(proximityLog);
+                        debug('------------------------------------');
                     }
                     // Distances to beacons at last check
                     distances.push({ time: when, line: line, bus: aBusId, beacon: beaconId, dist: d });
@@ -185,7 +172,11 @@ function lineCheck(line) {
             systemState.proximityLog[line] = proximityLog;
         }
     }
-    request.post(_busLines[line].req, callback);
+
+    var options = {
+        headers: _busLines[line].req.headers
+    };
+    nd.post(_busLines[line].req.url, _busLines[line].req.body, options, callback);    
 }
 
 var alertLog = {};
@@ -193,28 +184,28 @@ var alertLog = {};
 function checkTiming() {
     var pLog = systemState.proximityLog ;
     for (cLineKey in pLog) {
-        //console.log('--------- '+cLineKey+' ---------');
+        debug('--------- '+cLineKey+' ---------');
         byBeaconLog = pLog[cLineKey];
         for (cbeacon in byBeaconLog) {
-            //console.log('--------- '+cbeacon+' ---------');
+            debug('--------- '+cbeacon+' ---------');
             proximities = byBeaconLog[cbeacon];
             var cprox = 0;
-            //while (cprox < proximities.length) {
+            while (cprox < proximities.length) {
                 if (cprox+1 < proximities.length) {
                     var freq = proximities[cprox].time - proximities[cprox+1].time ;
                     var fKey = cLineKey+'-'+proximities[cprox].time+'-'+proximities[cprox+1].time ;
-                    //console.log('Last Freq: '+ freq/1000/60 + ' min');
+                    debug('Last Freq: '+ freq/1000/60 + ' min');
                     if ( freq > _intervalBetweenBuses ){
-                        //var log = '--------------------------------------------------- \n'+
-                        //           'Timing Alert !!! - Frequency between last 2 buses ('+freq/1000/60+' min) \n'+
-                        //           'At line: '+cLineKey+' between BusID: '+proximities[cprox].bus+' and BusID: '+proximities[cprox+1].bus+' in Beacon '+cbeacon+'\n';
+                        var log = '--------------------------------------------------- \n'+
+                                   'Timing Alert !!! - Frequency between last 2 buses ('+freq/1000/60+' min) \n'+
+                                   'At line: '+cLineKey+' between BusID: '+proximities[cprox].bus+' and BusID: '+proximities[cprox+1].bus+' in Beacon '+cbeacon+'\n';
                         var log = cLineKey+','+cbeacon+','+(freq/1000/60)+','+proximities[cprox].bus+','+proximities[cprox+1].bus+','+proximities[cprox].time+','+proximities[cprox+1].time;
-                        console.log(log);
+                        debug(log);
                         alertLog[fKey] = {log};
                     }
                 } 
-            //    cprox++;
-            //}
+                cprox++;
+            }
         };
     };
 }
@@ -225,7 +216,7 @@ function saveAlerts() {
     var today = (new Date()).toISOString().substring(0, 10);
     fs.writeFile('./results/checktiming-alerts-' + today + '.log', JSON.stringify(alertLog), function (err) {
         if (err) {
-            return console.log(err);
+            return debug(err);
         }
     });
     if (lastDate != today) {
@@ -242,4 +233,3 @@ setInterval(function() { lineCheck('504') },_intervalCheck);
 setInterval(function() { lineCheck('505') },_intervalCheck);*/
 setInterval(checkTiming,_intervalCheck*3);  // 15 secs
 setInterval(saveAlerts,_intervalCheck*12);  // 1 min
-

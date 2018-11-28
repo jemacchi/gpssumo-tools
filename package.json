@@ -4,12 +4,27 @@
   "description": "GPSSumo tools",
   "main": "checktiming.js",
   "dependencies": {
+    "needle": "^2.2.4",
     "geolib": "^2.0.24",
     "leaflet-headless": "^0.2.6",
-    "min-server": "^1.0.0",
-    "request": "^2.83.0"
+    "min-server": "^1.0.0"
   },
-  "devDependencies": {},
+  "devDependencies": {
+    "connect": "^2.8.8",
+    "gulp": "latest",
+    "gulp-coffee": "latest",
+    "gulp-concat": "latest",
+    "gulp-connect": "latest",
+    "gulp-livereload": "^4.0.0",
+    "gulp-sass": "latest",
+    "gulp-uglify": "latest",
+    "gulp-util": "latest",
+    "leaflet-headless": "^0.2.6",
+    "geolib": "^2.0.24",
+    "min-server": "^1.0.0",
+    "request": "^2.83.0",
+    "opn": "^5.4.0"
+  },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
